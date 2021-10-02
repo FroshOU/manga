@@ -1,0 +1,51 @@
+{% extends 'layout.html' %}
+{% load cache humanize custom_tags %}
+{% block title %}
+  <meta name="title" content="Latest Releases">
+  <meta name="twitter:title" content="Home - {{ config.NAME }}">
+  <meta property="og:title" content="Home - {{ config.NAME }}">
+  <title>Home &middot; {{ config.NAME }}</title>
+{% endblock %}
+{% block content %}
+  {% cache 600 releases latest_releases %}
+    <h1 class="text-shadow alter-bg">Latest Releases</h1>
+    <article id="latest">
+      {% for release in latest_releases %}
+        <section class="release">
+          <h2 class="release-title">
+            <a href="{{ release.series.get_absolute_url }}" title="{{ release.series }}">
+              {{ release.series }}
+            </a>
+          </h2>
+          <div class="release-info">
+            {% with vol=release.volume num=release.number %}
+              <a href="{{ release.get_absolute_url }}" title="{{ release.title }}"
+                 class="release-link{% if release.final %} end{% endif %}">{{ release }}</a>
+            {% endwith %}
+            <div class="chapter-metadata">
+              <span class="divider"></span>
+              {% with groups=release.groups.all  %}
+                <span class="chapter-groups" title="{{ groups|join:', ' }}">
+                  {% for group in groups %}
+                    <a href="{{ group.get_absolute_url }}" title="{{ group.name }}"
+                       {% if not forloop.last %}class="comma"{% endif %}>
+                      {{ group.name }}
+                    </a>
+                  {% endfor %}
+              {% endwith %}
+              </span>
+              <span class="divider"></span>
+              {% with published=release.published %}
+                <time class="chapter-date" datetime="{{ published|date:'c' }}"
+                      title="{{ published|naturaltime }}">{{ published|naturaltime }}</time>
+              {% endwith %}
+            </div>
+          </div>
+        </section>
+      {% endfor %}
+    </article>
+  {% endcache %}
+{% endblock %}
+{% block footer %}
+  {% include 'footer.html' with rss_url='releases.rss' %}
+{% endblock %}

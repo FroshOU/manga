@@ -1,0 +1,11 @@
+* text=auto
+
+docs/* linguist-documentation
+
+static/vendor/* linguist-vendored
+static/admin/* linguist-vendored
+static/django_tinymce/* linguist-vendored
+
+static/COMPILED/* linguist-generated
+
+.env.example linguist-detectable=false linguist-language=Shell

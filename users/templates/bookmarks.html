@@ -1,0 +1,41 @@
+{% extends 'layout.html' %}
+{% load humanize %}
+{% block robots %}
+  <meta name="robots" content="noindex">
+{% endblock %}
+{% block title %}
+  <meta name="title" content="User bookmarks">
+  <meta name="twitter:title" content="User bookmarks ~ {{ config.NAME }}">
+  <meta property="og:title" content="User bookmarks ~ {{ config.NAME }}">
+  <title>{{ user }}'s Bookmarks ~ {{ config.NAME }}</title>
+{% endblock %}
+{% block content %}
+  <h1 class="text-shadow alter-bg">Bookmarks</h1>
+  <article id="bookmarks">
+    {% for release in releases %}
+        <section class="bookmark">
+          <img class="cover" src="{{ release.series.cover.url }}">
+          <div class="bookmark-release">
+            <h2 class="bookmark-series">
+              <a href="{{ release.series.get_absolute_url }}" title="{{ release.series }}">
+                {{ release.series }}
+              </a>
+            </h2>
+            {% with vol=release.volume num=release.number %}
+              <a href="{{ release.get_absolute_url }}" title="{{ release.title }}"
+                 {% if release.final %}class="end"{% endif %}>{{ release }}</a>
+            {% endwith %}
+            <span class="divider"></span>
+            {% with published=release.published %}
+              <time class="chapter-date" datetime="{{ published|date:'c' }}"
+                    title="{{ published|naturaltime }}">{{ published|naturaltime }}</time>
+            {% endwith %}
+          </div>
+        </section>
+        <span class="alter-bg separator"></span>
+    {% endfor %}
+  </article>
+{% endblock %}
+{% block footer %}
+  {% include 'footer.html' with rss_url='user_bookmarks.rss' token=token %}
+{% endblock %}

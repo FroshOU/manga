@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+{% block description %}
+  <meta name="twitter:description" content="{{ error_message }}">
+  <meta property="og:description" content="{{ error_message }}">
+  <meta name="description" content="{{ error_message }}">
+{% endblock %}
+{% block robots %}
+  <meta name="robots" content="none, noarchive">
+{% endblock %}
+{% block title %}
+  <meta name="twitter:title" content="Error {{ error_status }}">
+  <meta property="og:title" content="Error {{ error_status }}">
+  <title>Error {{ error_status }} &middot; {{ config.NAME }}</title>
+{% endblock %}
+{% block content %}
+  <h1 class="text-shadow alter-fg">{{ error_message|safe }}</h1>
+{% endblock %}

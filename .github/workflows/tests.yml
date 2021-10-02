@@ -1,0 +1,180 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  sqlite:
+    name: "SQLite & Python 3.7"
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository_owner == 'mangadventure' &&
+      contains(github.event.head_commit.message, '[skip ci]') == false &&
+      contains(github.event.head_commit.message, '[ci skip]') == false
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v2
+      - name: "Set up Python 3.7"
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: "Install dependencies"
+        run: pip install wheel && pip install -e .[dev,csp]
+      - name: "Lint project"
+        run: flake8 && isort -q -c --df .
+      - name: "Run tests"
+        run: py.test --cov-report=xml
+        if: success()
+        env:
+          DB_TYPE: sqlite3
+      - name: "Set up coveralls"
+        uses: AndreMiras/coveralls-python-action@v20201129
+        if: success()
+        with:
+          parallel: true
+          flag-name: SQLite
+      - name: "Send status to Discord"
+        uses: MangAdventure/discord-webhook@v0.1
+        if: always() && github.event_name == 'push'
+        with:
+          run-suffix: ".1"
+          lang-name: Python
+          lang-version: 3.7
+          webhook-url: ${{secrets.BUILD_WEBHOOK}}
+
+  mysql:
+    name: "MySQL & Python 3.8"
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository_owner == 'mangadventure' &&
+      contains(github.event.head_commit.message, '[skip ci]') == false &&
+      contains(github.event.head_commit.message, '[ci skip]') == false
+    services:
+      mysql:
+        image: mariadb:10.5.9
+        ports: ["3306:3306"]
+        env:
+          MYSQL_DATABASE: mangadv
+          MYSQL_ROOT_PASSWORD: ${{secrets.DB_PASSWORD}}
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v2
+      - name: "Set up Python 3.8"
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: "Install dependencies"
+        run: pip install wheel && pip install -e .[dev,mysql]
+      - name: "Lint project"
+        run: flake8 && isort -q -c --df .
+      - name: "Run tests"
+        run: py.test
+        if: success()
+        env:
+          DB_TYPE: mysql
+          DB_PASSWORD: ${{secrets.DB_PASSWORD}}
+      - name: "Set up coveralls"
+        uses: AndreMiras/coveralls-python-action@v20201129
+        if: success()
+        with:
+          parallel: true
+          flag-name: MySQL
+      - name: "Send status to Discord"
+        uses: MangAdventure/discord-webhook@v0.1
+        if: always() && github.event_name == 'push'
+        with:
+          run-suffix: ".2"
+          lang-name: Python
+          lang-version: 3.8
+          webhook-url: ${{secrets.BUILD_WEBHOOK}}
+
+  postgresql:
+    name: "PostgreSQL & Python 3.9"
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository_owner == 'mangadventure' &&
+      contains(github.event.head_commit.message, '[skip ci]') == false &&
+      contains(github.event.head_commit.message, '[ci skip]') == false
+    services:
+      postgres:
+        image: postgres:13
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_DB: mangadv
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ${{secrets.DB_PASSWORD}}
+        options: >-
+          --health-cmd="pg_isready"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v2
+      - name: "Set up Python 3.9"
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+      - name: "Install dependencies"
+        run: pip install wheel && pip install -e .[dev,pgsql]
+      - name: "Lint project"
+        run: flake8 && isort -q -c --df .
+      - name: "Run tests"
+        run: py.test
+        if: success()
+        env:
+          DB_TYPE: postgresql
+          DB_PASSWORD: ${{secrets.DB_PASSWORD}}
+      - name: "Set up coveralls"
+        uses: AndreMiras/coveralls-python-action@v20201129
+        if: success()
+        with:
+          parallel: true
+          flag-name: PostgreSQL
+      - name: "Send status to Discord"
+        uses: MangAdventure/discord-webhook@v0.1
+        if: always() && github.event_name == 'push'
+        with:
+          run-suffix: ".3"
+          lang-name: Python
+          lang-version: 3.9
+          webhook-url: ${{secrets.BUILD_WEBHOOK}}
+
+  coveralls:
+    name: "Coveralls"
+    needs: [sqlite, mysql, postgresql]
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository_owner == 'mangadventure' &&
+      contains(github.event.head_commit.message, '[skip ci]') == false &&
+      contains(github.event.head_commit.message, '[ci skip]') == false
+    steps:
+      - name: "Upload coverage to coveralls"
+        uses: AndreMiras/coveralls-python-action@v20201129
+        with:
+          parallel-finished: true
+
+  codeql:
+    name: "CodeQL"
+    runs-on: ubuntu-latest
+    if: >-
+      github.repository_owner == 'mangadventure' &&
+      contains(github.event.head_commit.message, '[skip ci]') == false &&
+      contains(github.event.head_commit.message, '[ci skip]') == false
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v2
+      - name: "Initialize CodeQL"
+        uses: github/codeql-action/init@v1
+        with:
+          languages: javascript, python
+      - name: "Perform CodeQL Analysis"
+        uses: github/codeql-action/analyze@v1

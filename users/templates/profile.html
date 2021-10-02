@@ -1,0 +1,69 @@
+{% extends 'layout.html' %}
+{% load cache account custom_tags %}
+{% user_display request.user as user_display %}
+{% block robots %}
+  <meta name="robots" content="noindex">
+{% endblock %}
+{% block image %}
+  <meta name="twitter:card" content="summary">
+  {% if profile.avatar %}
+    {% with avatar=PAGE_URL|urljoin:profile.avatar.url %}
+      <meta name="twitter:image" content="{{ avatar }}">
+      <meta property="og:image" content="{{ avatar }}">
+      <meta name="twitter:image:alt" content="Avatar">
+      <meta property="og:image:alt" content="Avatar">
+    {% endwith %}
+  {% else %}
+    <meta name="twitter:image" content="">
+    <meta property="og:image" content="">
+  {% endif %}
+{% endblock %}
+{% block canonical %}
+  <link href="{{ CANON_URL }}?id={{ request.GET.id|default:request.user.id }}" rel="canonical" type="text/html">
+{% endblock %}
+{% with user=user_display %}
+  {% block title %}
+    <meta name="title" content="User profile">
+    <meta name="twitter:title" content="User profile ~ {{ config.NAME }}">
+    <meta property="og:title" content="User profile ~ {{ config.NAME }}">
+    <title>{{ user }} ~ {{ config.NAME }}</title>
+  {% endblock %}
+{% endwith %}
+{% block content %}
+  {% cache 3600 user_profile profile %}
+    <h1 class="text-shadow alter-bg">Profile</h1>
+    <article id="user-profile">
+      <section id="user-info">
+        <div id="user-avatar">
+          {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="{{ user_display }}">
+          {% else %}
+            <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"  version="1.2" viewBox="0 0 24 24">
+              <metadata>Source: https://github.com/stephenhutchings/typicons.font, License: CC-BY-SA</metadata>
+              <path d="M17 9c0-1.381-.56-2.631-1.464-3.535C14.631 4.56 13.381 4 12 4s-2.631.56-3.536 1.465C7.56 6.369 7 7.619 7 9s.56 2.631 1.464 3.535C9.369 13.44 10.619 14 12 14s2.631-.56 3.536-1.465A4.984 4.984 0 0 0 17 9zM6 19c0 1 2.25 2 6 2 3.518 0 6-1 6-2 0-2-2.354-4-6-4-3.75 0-6 2-6 4z"></path>
+            </svg>
+          {% endif %}
+        </div>
+        <div id="user-details">
+          {% with user=profile.user %}
+            {% if user == request.user %}
+              <div><strong>E-mail: </strong><span>{{ user.email }}</span></div>
+            {% endif %}
+            {% if user.username %}
+              <div><strong>Username: </strong><span>{{ user.username }}</span></div>
+            {% endif %}
+            {% if user.first_name %}
+              <div><strong>First name: </strong><span>{{ user.first_name }}</span></div>
+            {% endif %}
+            {% if user.last_name %}
+              <div><strong>Last name: </strong><span>{{ user.last_name }}</span></div>
+            {% endif %}
+          </div>
+        {% endwith %}
+      </section>
+      {% if profile.bio %}
+        <section id="user-bio"><strong>About:</strong><div>{{ profile.bio }}</div></section>
+      {% endif %}
+    </article>
+  {% endcache %}
+{% endblock %}
